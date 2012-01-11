@@ -3,10 +3,10 @@
   (:use ordered.set)
   (:require clojure.set))
 
-(defprotocol Values
+(defprotocol Nodes
   (--> [this rpd]))
 
-(extend-protocol Values
+(extend-protocol Nodes
   java.util.Map
   (--> [this rpd]
     (into-oset (get this rpd)))
@@ -19,7 +19,7 @@
      :else (throw (RuntimeException.
                    (format "Unsupported rpd type %s" (type rpd)))))))
 
-(defn rpe-reachables
+(defn rpe
   "Returns the set of objects reachable from `objs' (an object or seq of
   objects) by via the path description `rpd'."
   [v rpd]
@@ -32,25 +32,25 @@
   [start & specs]
   (let [ss (into-oset start)]
     (if (seq specs)
-      (recur (rpe-reachables ss (first specs))
+      (recur (rpe ss (first specs))
              (rest specs))
       ss)))
 
 (defn rpe-alt
   [start & alts]
-  (into-oset (mapcat #(rpe-reachables start %) alts)))
+  (into-oset (mapcat #(rpe start %) alts)))
 
 (defn rpe-opt
   [start rpd]
   (let [ss (into-oset start)]
-    (into-oset ss (rpe-reachables ss rpd))))
+    (into-oset ss (rpe ss rpd))))
 
 (defn rpe-+
   ([v p]
      (rpe-+ v p false true))
   ([v p d skip-v]
      (let [v  (into-oset v)
-	   n  (rpe-reachables (if (false? d) v d) p)
+	   n  (rpe (if (false? d) v d) p)
 	   df (clojure.set/difference n v)
 	   sv (if skip-v n (into-oset v n))]
        (if (seq df)
@@ -66,7 +66,7 @@
      {:pre [(<= l u) (>= l 0) (>= u 0)]}
      (loop [i (- u l), s (rpe-exp objs l rpd)]
        (if (pos? i)
-         (let [ns (into s (rpe-reachables s rpd))]
+         (let [ns (into s (rpe s rpd))]
            (if (= (count s) (count ns))
              s
              (recur (dec i) ns)))
@@ -75,7 +75,7 @@
      {:pre [(>= n 0)]}
      (if (zero? n)
        (into-oset objs)
-       (recur (rpe-reachables objs rpd) (dec n) rpd))))
+       (recur (rpe objs rpd) (dec n) rpd))))
 
 (defn rpe-restr
   [objs pred]

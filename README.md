@@ -1,14 +1,23 @@
 # clj-rpe
 
-Clj-rpe is a Clojure library that implements *Regular Path Expressions* on
-Clojure data structures and arbitrary Java objects.  Basically, it enables you
-to retrieve the set of objects given a start object and a *regular path
+Clj-rpe is a Clojure library that implements *Regular Path Expressions* (RPEs)
+on Clojure data structures and arbitrary Java objects.  It enables you to
+retrieve the ordered set of objects reachable from a given start object (or set
+of start objects) by traversing a path conforming to a *regular path
 description*.
 
 A regular path description is a declarative means to specify allowed paths in
 some object structure in terms of keys in a map or fields/methods in classes.
 Those can be composed using regular operators such as sequence, option,
 alternative, and iterations.
+
+RPEs were originally to conceived and implemented for graphs by the working
+group for the graph query language
+[http://www.uni-koblenz-landau.de/koblenz/fb4/institute/IST/RGEbert/MainResearch-en/Graphtechnology/graph-repository-query-language-greql](GReQL).
+However, one can view any map as a graph, where the keys are the edges and the
+values are the nodes, and one can view any object net as a graph, where the
+field and method names are the edges, and the field values and objects returned
+by methods are the nodes.
 
 ## Usage
 
@@ -27,7 +36,7 @@ map as well.
                 :baz {:x :bazx, :y :bazy, :z :bazz}}
             :x {:y {:x {:y {:x {:y "Got me!"}}}}}})
 
-The main function of clj-rpe is `rpe-reachables`.  It gets a start object (or a
+The main function of clj-rpe is `rpe`.  It gets a start object (or a
 collection of start objects) and a regular path description and returns the
 ordered set of reachable objects.  In case of a map (or record), the most
 simple path description is just a key that's looked up in the map.
@@ -35,14 +44,14 @@ simple path description is just a key that's looked up in the map.
 What objects can be reached from `m` by traversing a path consisting only of
 the key `:a`?
 
-    (rpe-reachables m :a)
+    (rpe m :a)
     ;=> #{1}
-    (rpe-reachables m "b")
+    (rpe m "b")
     ;=> #{{1 "One", 2 "Two", 3 "Three"}}
 
 What happens when we use a key that's not in the map?
 
-    (rpe-reachables m 'unkn0wn)
+    (rpe m 'unkn0wn)
     ;=> #{}
 
 We cannot reach anything inside `m` with that key, so the returned set is
@@ -55,23 +64,23 @@ regular path descriptions using the operators discussed in this section.
 
 **Sequence.** The function `rpe-seq` is the path sequence returning the objects
 reachable by traversing one path description after the other.  It is a
-function, but usually you invoke it thru `rpe-reachables`.
+function, but usually you invoke it thru `rpe`.
 
-    (rpe-reachables m [rpe-seq :c :bar :y])
+    (rpe m [rpe-seq :c :bar :y])
     ;=> #{:bary}
 
 **Option.** The function `rpe-opt` is the path option.  For example, let's get
 all objects reachable by the path sequence in the last example except for `:y`
 being traversed optionally now.
 
-    (rpe-reachables m [rpe-seq :c :bar [rpe-opt :y]])
+    (rpe m [rpe-seq :c :bar [rpe-opt :y]])
     ;=> #{{:y :bary, :x :barx}
           :bary}
 
 **Alternative.** The function `rpe-alt` is the path alternative.  For example,
 let's get all values of the `:y` key in `:foo`, `:bar`, and `:baz` submaps.
 
-    (rpe-reachables m [rpe-seq :c [rpe-alt :foo :bar :baz] :y])
+    (rpe m [rpe-seq :c [rpe-alt :foo :bar :baz] :y])
     ;=> #{:fooy :bary :bazy}
 
 **Iteration.** The function `rpe-+` is the one-or-many path iteration, the
@@ -79,7 +88,7 @@ function `rpe-*` is the zero-or-many path iteration.
 
 What can we reach by iterating an alternating path of `:x` and `:y` keys?
 
-    (rpe-reachables m [rpe-+ [rpe-seq :x :y]])
+    (rpe m [rpe-+ [rpe-seq :x :y]])
     ;=> #{{:x {:y {:x {:y "Got me!"}}}}
           {:x {:y "Got me!"}}
           "Got me!"}
@@ -88,10 +97,11 @@ What can we reach by iterating an alternating path of `:x` and `:y` keys?
 the given path description a fixed number of times, or at least as often as the
 given lower bound but at most as the given upper bound.
 
-    (rpe-reachables m [rpe-exp 3 [rpe-seq :x :y]])
+    (rpe m [rpe-exp 3 [rpe-seq :x :y]])
     ;=> #{"Got me!"}
-    (rpe-reachables m [rpe-exp 2 19 [rpe-seq :x :y]])
-    ;=> #{{:x {:y "Got me!"}} "Got me!"}
+    (rpe m [rpe-exp 2 19 [rpe-seq :x :y]])
+    ;=> #{{:x {:y "Got me!"}}
+          "Got me!"}
 
 The iteration stops as soon as the last iteration doesn't find anything new.
 
@@ -99,9 +109,66 @@ The iteration stops as soon as the last iteration doesn't find anything new.
 `filter` with swapped arguments, and it ensures that an ordered set is
 returned.
 
-    (rpe-reachables m [rpe-seq [rpe-+ [rpe-seq :x :y]]
-                               [rpe-restr string?]])
+    (rpe m [rpe-seq [rpe-+ [rpe-seq :x :y]]
+                    [rpe-restr string?]])
     ;=> #{"Got me!"}
+
+### RPEs on arbitrary Java objects
+
+As already mentioned above, those RPEs also work on arbitrary Java objects and
+Clojure data types defined with `deftype`.  For those, the edges are the field
+names specified using keywords and the method names specified using symbols.
+For the sake of simplicity, let's discuss them using class objects and the
+reflection API.
+
+What are the superclasses of `Long`?
+
+    (rpe Long [rpe-+ 'getSuperclass])
+    ;=> #{java.lang.Number java.lang.Object}
+
+`getSuperclass` is a method defined in the class `Class` which returns the
+classes superclass (or `nil` for `Object`), and by iterating such an "edge" one
+or many times, we get all superclasses.
+
+What about all supertypes, e.g., classes and interfaces?  We simply use an
+alternative.
+
+    (rpe Long [rpe-+ [rpe-alt 'getSuperclass 'getInterfaces]])
+    ;=> #{java.lang.Number java.lang.Comparable
+          java.lang.Object java.io.Serializable}
+
+What's the set of return types of all methods in the class `Long`?
+
+    (rpe Long [rpe-seq 'getMethods 'getReturnType])
+    ;=> #{int boolean java.lang.String long java.lang.Long
+          byte short float double void java.lang.Class}
+
+What if we only want to recognize getter methods?
+
+    (rpe Long [rpe-seq 'getMethods
+                       [rpe-restr #(re-matches #"^get.*" (.getName %))]
+                       'getReturnType])
+    ;=> #{java.lang.Long java.lang.Class}
+
+Since I cannot find any standard Java classes with public fields, let's
+consider this simple Clojure type with a `val` field.  In RPEs, fields are
+accessed using keywords.
+
+    (defprotocol Successor
+      (succ [this]))
+    
+    (deftype Int [val]
+      Successor
+      (succ [_]
+        (Int. (inc val))))
+
+So what do we get when we start with the `Int' zero and traverse 10 `succ`
+"edges" and then a `val` "edge"?
+
+    (rpe (Int. 0) [rpe-seq [rpe-exp 10 'succ] :val])
+    ;=> #{10}
+
+Ok, that's all.  Have fun!
 
 ## License
 
