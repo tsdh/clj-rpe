@@ -13,10 +13,7 @@
   java.lang.Object
   (--> [this rpd]
     (cond
-     (keyword? rpd) (let [b (bean this)]
-                      (if (contains? b rpd) ;; Needed, cause bean maps error on unknown key
-                        (into-oset (rpd b))
-                        (ordered-set)))
+     (keyword? rpd) (access-field this rpd)
      (symbol? rpd)  (invoke-method this rpd)
      (fn? rpd)      (into-oset (rpd this))
      :else (throw (RuntimeException. (format "Unsupported rpd type %s" (type rpd)))))))
