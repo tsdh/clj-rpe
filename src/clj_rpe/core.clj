@@ -24,7 +24,14 @@
   objects) by via the path description `rpd'."
   [v rpd]
   (cond
-   (fn? rpd)   (into-oset (mapcat #(rpd %) (into-oset v)))
+   (fn? rpd)   (into-oset (mapcat (fn [x]
+                                    (into-oset
+                                     (try
+                                       (rpd x)
+                                       (catch clojure.lang.ArityException e
+                                         (throw e))
+                                       (catch Exception _ nil))))
+                                  (into-oset v)))
    (coll? rpd) (apply (first rpd) v (rest rpd))
    :else       (into-oset (mapcat #(--> % rpd) (into-oset v)))))
 

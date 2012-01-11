@@ -17,9 +17,11 @@ RPEs were originally to conceived and implemented for graphs by the working
 group for the graph query language
 [GReQL](http://www.uni-koblenz-landau.de/koblenz/fb4/institute/IST/RGEbert/MainResearch-en/Graphtechnology/graph-repository-query-language-greql).
 However, one can view any map as a graph, where the keys are the edges and the
-values are the nodes, and one can view any object net as a graph, where the
-field and method names are the edges, and the field values and objects returned
-by methods are the nodes.
+values are the nodes.  Likewise, one can view any object net as a graph, where
+the field and method names are the edges, and the field values and objects
+returned by methods are the nodes.  And finally, any Clojure function of arity
+one can be viewed as an edge, and its return value is the node at the other
+side.
 
 ## Usage
 
@@ -178,8 +180,19 @@ accessed using keywords.
 So what do we get when we start with the `Int` zero and traverse 10 `succ`
 "edges" and then a `val` "edge"?
 
-    (rpe (Int. 0) [rpe-seq [rpe-exp 10 'succ] :val])
+    (rpe (Int. 0) [rpe-seq [rpe-exp 10 succ] :val])
     ;=> #{10}
+    
+This example also demonstrated that functions of arity one like `succ` may be
+used as "edges", too.  If a function throws an exception (possibly, because
+it's not applicable for the object given to it, which easily happens in RPEs
+with alternatives and iteration), the exception is caught, except for arity
+exceptions.
+
+    (rpe 7 quot)
+    ; ArityException, because quot wants 2 args
+    (rpe "foo" inc)
+    ;=> #{} ;; Correct arity, but simply not applicable and thus the empty set
 
 Ok, that's all.  Have fun!
 
