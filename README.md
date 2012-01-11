@@ -11,6 +11,8 @@ some object structure in terms of keys in a map or fields/methods in classes.
 Those can be composed using regular operators such as sequence, option,
 alternative, and iterations.
 
+You can get this library from [Clojars](http://clojars.org/clj-rpe).
+
 RPEs were originally to conceived and implemented for graphs by the working
 group for the graph query language
 [GReQL](http://www.uni-koblenz-landau.de/koblenz/fb4/institute/IST/RGEbert/MainResearch-en/Graphtechnology/graph-repository-query-language-greql).
@@ -149,6 +151,17 @@ What if we only want to recognize getter methods?
                        [rpe-restr #(re-matches #"^get.*" (.getName %))]
                        'getReturnType])
     ;=> #{java.lang.Long java.lang.Class}
+
+What if we want to check both `Long` and `String`?
+
+    (rpe [Long String]
+         [rpe-seq 'getMethods
+                  [rpe-restr #(re-matches #"^get.*" (.getName %))]
+                  'getReturnType])
+    ;=> #{java.lang.Long java.lang.Class void [B}
+
+The `void` is strange for a getter, but there's in fact a 
+`String.getBytes(...)` method that returns nothing...
 
 Since I cannot find any standard Java classes with public fields, let's
 consider this simple Clojure type with a `val` field.  In RPEs, fields are
