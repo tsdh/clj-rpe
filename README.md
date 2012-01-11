@@ -13,7 +13,7 @@ alternative, and iterations.
 
 RPEs were originally to conceived and implemented for graphs by the working
 group for the graph query language
-[http://www.uni-koblenz-landau.de/koblenz/fb4/institute/IST/RGEbert/MainResearch-en/Graphtechnology/graph-repository-query-language-greql](GReQL).
+[GReQL](http://www.uni-koblenz-landau.de/koblenz/fb4/institute/IST/RGEbert/MainResearch-en/Graphtechnology/graph-repository-query-language-greql).
 However, one can view any map as a graph, where the keys are the edges and the
 values are the nodes, and one can view any object net as a graph, where the
 field and method names are the edges, and the field values and objects returned
@@ -162,7 +162,7 @@ accessed using keywords.
       (succ [_]
         (Int. (inc val))))
 
-So what do we get when we start with the `Int' zero and traverse 10 `succ`
+So what do we get when we start with the `Int` zero and traverse 10 `succ`
 "edges" and then a `val` "edge"?
 
     (rpe (Int. 0) [rpe-seq [rpe-exp 10 'succ] :val])
@@ -180,3 +180,4 @@ Distributed under the Eclipse Public License, the same as Clojure.
 <!-- mode: markdown          -->
 <!-- indent-tabs-mode: nil   -->
 <!-- End:                    -->
+
