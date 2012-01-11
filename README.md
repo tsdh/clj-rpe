@@ -1,4 +1,4 @@
-# clj-query
+# clj-rpe
 
 FIXME: write description
 
