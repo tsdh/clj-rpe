@@ -16,7 +16,8 @@
      (keyword? rpd) (access-field this rpd)
      (symbol? rpd)  (invoke-method this rpd)
      (fn? rpd)      (into-oset (rpd this))
-     :else (throw (RuntimeException. (format "Unsupported rpd type %s" (type rpd)))))))
+     :else (throw (RuntimeException.
+                   (format "Unsupported rpd type %s" (type rpd)))))))
 
 (defn rpe-reachables
   "Returns the set of objects reachable from `objs' (an object or seq of
