@@ -1,6 +1,7 @@
 (ns clj-rpe.utils
   (:use ordered.set)
-  (:import [java.util Collection]))
+  (:import [java.util Collection])
+  (:import [java.lang.reflect Method Field]))
 
 (defn into-oset
   ([x]
@@ -17,17 +18,18 @@
   [o mname]
   (let [c (class o)
         mn (name mname)
-        m (first (filter #(and (= (.getName %) mn)
-                               (== 0 (alength (.getParameterTypes %))))
-                         (.getMethods c)))]
+        m (first (filter
+                  #(and (= (.getName ^Method %) mn)
+                        (== 0 (alength (.getParameterTypes ^Method %))))
+                  (.getMethods ^Class c)))]
     (into-oset
      (when m
-       (.invoke m o (to-array []))))))
+       (.invoke ^Method m o (to-array []))))))
 
 (defn access-field
   [o fname]
   (let [c (class o)
         fnam (name fname)
-        f (first (filter #(= fnam (.getName %))
-                         (seq (.getFields c))))]
-    (into-oset (when f (.get f o)))))
+        f (first (filter #(= fnam (.getName ^Field %))
+                         (seq (.getFields ^Class c))))]
+    (into-oset (when f (.get ^Field f o)))))
