@@ -16,20 +16,16 @@
 
 (defn invoke-method
   [o mname]
-  (let [c (class o)
-        mn (name mname)
-        m (first (filter
-                  #(and (= (.getName ^Method %) mn)
-                        (== 0 (alength (.getParameterTypes ^Method %))))
-                  (.getMethods ^Class c)))]
+  (try
     (into-oset
-     (when m
-       (.invoke ^Method m o (to-array []))))))
+     (clojure.lang.Reflector/invokeInstanceMethod
+      o (name mname) (to-array [])))
+    (catch Exception _ (ordered-set))))
 
 (defn access-field
   [o fname]
-  (let [c (class o)
-        fnam (name fname)
-        f (first (filter #(= fnam (.getName ^Field %))
-                         (seq (.getFields ^Class c))))]
-    (into-oset (when f (.get ^Field f o)))))
+  (try
+    (into-oset
+     (clojure.lang.Reflector/getInstanceField
+      o (name fname)))
+    (catch Exception _ (ordered-set))))
