@@ -5,8 +5,8 @@
 
 (defn into-oset
   "Return an ordered set representation of `x' or the union of `s' and `x'.
-  Single-valued objects get conjoined, collections are converted to ordered
-  sets."
+  Single-valued objects get conjoined, collections and arrays are converted to
+  ordered sets."
   ([x]
      (cond
       (nil? x)                 (ordered-set)
