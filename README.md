@@ -120,10 +120,10 @@ returned.
 ### RPEs on arbitrary Java objects
 
 As already mentioned above, those RPEs also work on arbitrary Java objects and
-Clojure data types defined with `deftype`.  For those, the edges are the field
-names specified using keywords and the method names specified using symbols.
-For the sake of simplicity, let's discuss them using class objects and the
-reflection API.
+Clojure data types defined with `deftype`.  For those, the "edges" are the
+field names specified using keywords and the method names specified using
+symbols.  For the sake of simplicity, let's discuss them using class objects
+and the reflection API.
 
 What are the superclasses of `Long`?
 
@@ -187,7 +187,7 @@ This example also demonstrated that functions of arity one like `succ` may be
 used as "edges", too.  If a function throws an exception (possibly, because
 it's not applicable for the object given to it, which easily happens in RPEs
 with alternatives and iteration), the exception is caught, except for arity
-exceptions.
+exceptions, because those are clearly usage errors.
 
     (rpe 7 quot)
     ; ArityException, because quot wants 2 args
