@@ -34,6 +34,15 @@
          (rpe m [rpe-seq [rpe-+ [rpe-seq :x :y]]
                          [rpe-restr string?]]))))
 
+(deftest iterator-test
+  (is (= #{1 2 3}
+         (rpe [[1 2 3 2 1]] 'iterator))))
+
+(deftest enumeration-test
+  (is (= #{"foo" "bar" "baz"}
+         (rpe [(java.util.Vector. ["foo" "bar" "foo" "baz" "bar"])]
+              'elements))))
+
 (defn superclasses
   [c]
   (rpe c [rpe-+ 'getSuperclass]))

@@ -1,4 +1,4 @@
-(defproject clj-rpe "1.1.0"
+(defproject clj-rpe "1.1.1"
   :description "Regular path expressions for Java object networks and Clojure
   structures."
   :dependencies [[org.clojure/clojure "1.3.0"]
