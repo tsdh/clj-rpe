@@ -1,19 +1,28 @@
 (ns clj-rpe.utils
   (:use ordered.set)
-  (:import [java.util Collection])
+  (:import [java.util Collection Iterator Enumeration])
   (:import [java.lang.reflect Method Field]))
 
 (defn into-oset
   "Return an ordered set representation of `x' or the union of `s' and `x'.
-  Single-valued objects get conjoined, collections and arrays are converted to
-  ordered sets."
+  For a single-valued object or a map, an ordered set containing it is
+  returned.  For multi-valued objects (Collections, Iterators, Enumerations,
+  arrays), the returned ordered set contains all their values."
   ([x]
      (cond
-      (nil? x)                 (ordered-set)
-      (set? x)                 x
-      (instance? Collection x) (apply ordered-set (seq x))
-      (.isArray (class x))     (apply ordered-set (seq x))
-      :else                    (ordered-set x)))
+      (nil? x)                  (ordered-set)
+      (set? x)                  x
+      (or
+       (instance? Collection x)
+       (.isArray (class x)))    (apply ordered-set (seq x))
+      (instance? Iterator x)    (apply ordered-set (iterator-seq x))
+      (instance? Enumeration x) (loop [^Enumeration enum x,
+                                       vals (transient (ordered-set))]
+                                  (if (.hasMoreElements enum)
+                                    (let [n (.nextElement enum)]
+                                      (recur enum (conj! vals n)))
+                                    (persistent! vals)))
+      :else                     (ordered-set x)))
   ([s x]
      (into (into-oset s) (into-oset x))))
 
