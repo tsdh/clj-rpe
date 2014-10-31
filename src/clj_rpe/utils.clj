@@ -1,7 +1,7 @@
 (ns clj-rpe.utils
-  (:use ordered.set)
-  (:import [java.util Collection Iterator Enumeration])
-  (:import [java.lang.reflect Method Field]))
+  (:require [flatland.ordered.set :as os])
+  (:import (java.util Collection Iterator Enumeration))
+  (:import (java.lang.reflect Method Field)))
 
 (defn into-oset
   "Return an ordered set representation of `x' or the union of `s' and `x'.
@@ -10,19 +10,19 @@
   arrays), the returned ordered set contains all their values."
   ([x]
      (cond
-      (nil? x)                  (ordered-set)
+      (nil? x)                  (os/ordered-set)
       (set? x)                  x
       (or
        (instance? Collection x)
-       (.isArray (class x)))    (apply ordered-set (seq x))
-      (instance? Iterator x)    (apply ordered-set (iterator-seq x))
-      (instance? Enumeration x) (loop [^Enumeration enum x,
-                                       vals (transient (ordered-set))]
-                                  (if (.hasMoreElements enum)
-                                    (let [n (.nextElement enum)]
-                                      (recur enum (conj! vals n)))
-                                    (persistent! vals)))
-      :else                     (ordered-set x)))
+       (.isArray (class x)))    (apply os/ordered-set (seq x))
+       (instance? Iterator x)    (apply os/ordered-set (iterator-seq x))
+       (instance? Enumeration x) (loop [^Enumeration enum x,
+                                        vals (transient (os/ordered-set))]
+                                   (if (.hasMoreElements enum)
+                                     (let [n (.nextElement enum)]
+                                       (recur enum (conj! vals n)))
+                                     (persistent! vals)))
+       :else                     (os/ordered-set x)))
   ([s x]
      (into (into-oset s) (into-oset x))))
 
@@ -34,7 +34,7 @@
     (into-oset
      (clojure.lang.Reflector/invokeInstanceMethod
       o (name mname) (to-array [])))
-    (catch Exception _ (ordered-set))))
+    (catch Exception _ (os/ordered-set))))
 
 (defn access-field
   "Return an ordered set of `o's `fname' field value.
@@ -44,4 +44,4 @@
     (into-oset
      (clojure.lang.Reflector/getInstanceField
       o (name fname)))
-    (catch Exception _ (ordered-set))))
+    (catch Exception _ (os/ordered-set))))

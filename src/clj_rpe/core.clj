@@ -1,7 +1,6 @@
 (ns clj-rpe.core
   (:use clj-rpe.utils)
-  (:use ordered.set)
-  (:require clojure.set))
+  (:require [clojure.set]))
 
 (defprotocol Nodes
   (--> [this rpd]))
